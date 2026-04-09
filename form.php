@@ -498,11 +498,12 @@ class MCF_List_Table extends WP_List_Table {
         $raw_order = isset( $_REQUEST['order'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             ? sanitize_key( wp_unslash( $_REQUEST['order'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             : '';
-        $order = ( 'asc' === strtolower( $raw_order ) ) ? 'ASC' : 'DESC';
+        $is_asc = ( 'asc' === strtolower( $raw_order ) );
 
         // ── Queries ───────────────────────────────────────────────────────────
-        // Table name comes from mcf_get_table_name() (sanitize_key applied).
-        // $orderby and $order are validated against an allow-list / two values above.
+        // Table name uses %i identifier placeholder (WP 6.2+).
+        // $orderby is validated against an allow-list above; sort direction
+        // is a boolean ($is_asc) so no user-derived string reaches prepare().
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
         if ( $search ) {
@@ -518,42 +519,63 @@ class MCF_List_Table extends WP_List_Table {
                 )
             );
 
-            $order_sql = ( 'ASC' === $order )
-                ? "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY %i ASC LIMIT %d OFFSET %d"
-                : "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY %i DESC LIMIT %d OFFSET %d";
-
-            $results = $wpdb->get_results(
-                $wpdb->prepare(
-                    $order_sql,
-                    $table,
-                    $like,
-                    $like,
-                    $like,
-                    $orderby,
-                    $per_page,
-                    $offset
-                ),
-                ARRAY_A
-            );
+            if ( $is_asc ) {
+                $results = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY %i ASC LIMIT %d OFFSET %d",
+                        $table,
+                        $like,
+                        $like,
+                        $like,
+                        $orderby,
+                        $per_page,
+                        $offset
+                    ),
+                    ARRAY_A
+                );
+            } else {
+                $results = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY %i DESC LIMIT %d OFFSET %d",
+                        $table,
+                        $like,
+                        $like,
+                        $like,
+                        $orderby,
+                        $per_page,
+                        $offset
+                    ),
+                    ARRAY_A
+                );
+            }
         } else {
             $total = (int) $wpdb->get_var(
                 $wpdb->prepare( "SELECT COUNT(*) FROM %i", $table )
             );
 
-            $order_sql = ( 'ASC' === $order )
-                ? "SELECT * FROM %i ORDER BY %i ASC LIMIT %d OFFSET %d"
-                : "SELECT * FROM %i ORDER BY %i DESC LIMIT %d OFFSET %d";
-
-            $results = $wpdb->get_results(
-                $wpdb->prepare(
-                    $order_sql,
-                    $table,
-                    $orderby,
-                    $per_page,
-                    $offset
-                ),
-                ARRAY_A
-            );
+            if ( $is_asc ) {
+                $results = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM %i ORDER BY %i ASC LIMIT %d OFFSET %d",
+                        $table,
+                        $orderby,
+                        $per_page,
+                        $offset
+                    ),
+                    ARRAY_A
+                );
+            } else {
+                $results = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM %i ORDER BY %i DESC LIMIT %d OFFSET %d",
+                        $table,
+                        $orderby,
+                        $per_page,
+                        $offset
+                    ),
+                    ARRAY_A
+                );
+            }
         }
 
         // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
