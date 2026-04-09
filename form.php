@@ -518,9 +518,13 @@ class MCF_List_Table extends WP_List_Table {
                 )
             );
 
+            $order_sql = ( 'ASC' === $order )
+                ? "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY %i ASC LIMIT %d OFFSET %d"
+                : "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY %i DESC LIMIT %d OFFSET %d";
+
             $results = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY %i " . $order . " LIMIT %d OFFSET %d",
+                    $order_sql,
                     $table,
                     $like,
                     $like,
@@ -536,9 +540,13 @@ class MCF_List_Table extends WP_List_Table {
                 $wpdb->prepare( "SELECT COUNT(*) FROM %i", $table )
             );
 
+            $order_sql = ( 'ASC' === $order )
+                ? "SELECT * FROM %i ORDER BY %i ASC LIMIT %d OFFSET %d"
+                : "SELECT * FROM %i ORDER BY %i DESC LIMIT %d OFFSET %d";
+
             $results = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT * FROM %i ORDER BY %i " . $order . " LIMIT %d OFFSET %d",
+                    $order_sql,
                     $table,
                     $orderby,
                     $per_page,
