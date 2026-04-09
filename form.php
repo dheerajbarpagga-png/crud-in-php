@@ -520,11 +520,12 @@ class MCF_List_Table extends WP_List_Table {
 
             $results = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
+                    "SELECT * FROM %i WHERE name LIKE %s OR email LIKE %s OR state LIKE %s ORDER BY %i " . $order . " LIMIT %d OFFSET %d",
                     $table,
                     $like,
                     $like,
                     $like,
+                    $orderby,
                     $per_page,
                     $offset
                 ),
@@ -537,8 +538,9 @@ class MCF_List_Table extends WP_List_Table {
 
             $results = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT * FROM %i ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
+                    "SELECT * FROM %i ORDER BY %i " . $order . " LIMIT %d OFFSET %d",
                     $table,
+                    $orderby,
                     $per_page,
                     $offset
                 ),
@@ -576,14 +578,13 @@ function mcf_admin_list_page() {
 
         if ( ! empty( $ids ) ) {
             global $wpdb;
-            $table        = mcf_get_table_name();
-            $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+            $table = mcf_get_table_name();
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
             $wpdb->query(
                 $wpdb->prepare(
                     // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                    "DELETE FROM %i WHERE id IN ({$placeholders})",
+                    "DELETE FROM %i WHERE id IN (" . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ")",
                     array_merge( array( $table ), $ids )
                 )
             );
